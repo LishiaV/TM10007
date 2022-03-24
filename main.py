@@ -8,7 +8,7 @@ T2-weighted, T2-weighted FLAIR and T1-weighted before and after injection of con
 '''
 
 # General packages
-import numpy as np 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import datasets as ds
@@ -21,6 +21,9 @@ from sklearn.model_selection import train_test_split
 # Classifiers
 from sklearn import metrics
 from sklearn.decomposition import PCA
+
+# scaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 def split_data(data_brats):
 
@@ -43,14 +46,44 @@ def feature_scale(data_train):
     return data_scaled
 
 
-def no_none(data_scaled):
+def convert_data(data_scaled):
     '''
     Drop rows and colums with to many None. Threshold for minimum amount of non-None values in a row and a column is set on ... and ... respectively. 
     '''
-    data_no_none = data_scaled.dropna(axis=1, thresh=150) #, thresh=None, subset=None, inplace=False)
-    print(data_no_none.head())
-    print(data_no_none.size)
-    return data_no_none
+    data_no_none = data_scaled.dropna(axis=1) # Threshold to be determined with thresh = xx
+
+    data_replace = data_no_none.replace(['LGG', 'GBM'], [0, 1])
+
+    print(data_replace.head)
+
+
+    return data_replace
+
+def feature_scale(data_train):
+    '''
+    Scale features
+    '''
+    # standard scaler
+    scaler = StandardScaler()
+    scaler.fit(data_train)
+    X_scaled = scaler.transform(data_train)
+
+    print(X_scaled)
+    return
+'''
+    
+    scaler_two = MinMaxScaler()
+    scaler_two.fit(data_train)
+    X_scaled_two = scaler_two.transform(data_train)
+
+    print(X_scaled_two)
+
+    scaler_three = RobustScaler()
+    scaler_three.fit(data_train)
+    X_scaled_three = scaler_three.transform(data_train)
+
+    print(X_scaled_three)
+    '''
 
 
 def feature_selection():
@@ -103,10 +136,11 @@ def colorplot(clf, ax, x, y, h=100):
 
 
 if __name__ == "__main__":
-    data_brats = load_data() 
+    data_brats = load_data()
     data_train, data_test = split_data(data_brats)
-    # feature_scale(data_train)
-    # data_nonone = no_none(data_brats)
+    data_converted = convert_data(data_train)
+    # feature_scale(data_converted)
+
     # feature_selection()
     # feature_transform()
     # colorplot(clf, ax, x, y, h=100)
