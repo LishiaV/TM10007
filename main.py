@@ -18,6 +18,9 @@ import seaborn
 from brats.load_data import load_data
 from sklearn.model_selection import train_test_split
 
+# scaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+
 # Classifiers
 from sklearn import metrics
 from sklearn.decomposition import PCA
@@ -34,15 +37,6 @@ def split_data(data_brats):
     data_train, data_test = train_test_split(data_features, test_size=0.45) # Nog bepalen wat test_size wordt
     return data_train, data_test
 
-
-def feature_scale(data_train):
-    '''
-    Scale features
-    '''
-
-    return data_scaled
-
-
 def no_none(data_scaled):
     '''
     Drop rows and colums with to many None. Threshold for minimum amount of non-None values in a row and a column is set on ... and ... respectively. 
@@ -52,11 +46,47 @@ def no_none(data_scaled):
     print(data_no_none.size)
     return data_no_none
 
+def missing_data(data):
+
+
+def feature_scale(data_train):
+    '''
+    Scale features
+    '''
+    # standard scaler
+    scaler = StandardScaler()
+    scaler.fit(data_train)
+    X_scaled = scaler.transform(data_train)
+
+    print(X_scaled)
+
+    scaler_two = MinMaxScaler()
+    scaler_two.fit(data_train)
+    X_scaled_two = scaler_two.transform(data_train)
+
+    print(X_scaled_two)
+
+    scaler_three = RobustScaler()
+    scaler_three.fit(data_train)
+    X_scaled_three = scaler_three.transform(data_train)
+
+    print(X_scaled_three)
+
+
+    return data_scaled
+
+
+
+
+
+
 
 def feature_selection():
     '''
     Selection of features
     '''
+
+    # cross validation?
 
 
 def feature_transform():
@@ -105,6 +135,7 @@ def colorplot(clf, ax, x, y, h=100):
 if __name__ == "__main__":
     data_brats = load_data() 
     data_train, data_test = split_data(data_brats)
+    feature_scale(data_train)
     # feature_scale(data_train)
     # data_nonone = no_none(data_brats)
     # feature_selection()
