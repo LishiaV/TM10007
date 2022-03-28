@@ -48,12 +48,27 @@ def split_data(data_brats):
 
 def no_none(data):
     '''
-    Drop rows and colums with to many None. Threshold for minimum amount of non-None values in a row and a column is set on ... and ... respectively. 
+    Deleting columns with NaN or filling them.
     '''
-    data_no_none = data.dropna() #axis=1, thresh=91) #, thresh=None, subset=None, inplace=False)
-    print(data_no_none.head())
-    print(data_no_none.size)
-    return data_no_none
+    # Inzicht in data
+    print(f'OVERZICHT: {data.isnull().sum()}')
+    print(data)
+
+    # If the total number of NaN observations in a column are greater than 40%, delete the entire column.
+    perc = 40.0
+    min_count = int(((100-perc)/100)*data.shape[0] + 1)
+    data_dropcolumn = data.dropna(axis=1, thresh=min_count)
+
+    print(data_dropcolumn)
+    print(data_dropcolumn.size)
+
+    # fill the NaN observations.
+    data_fill = data_dropcolumn.fillna(data_dropcolumn.median())
+    print(data_fill.head())
+    print(data_fill.size)
+
+    # Inzicht in data
+    print(f'OVERZICHT NONONE: {data_fill.isnull().sum()}')
 
 def split_xy(data_no_none):
     y = data_no_none_train.pop('label')
@@ -155,14 +170,14 @@ if __name__ == "__main__":
 
     #TRAIN
     data_no_none_train = no_none(data_train)
-    y_train, X_train = split_xy(data_no_none_train)
+    ##y_train, X_train = split_xy(data_no_none_train)
     
     #TEST
-    data_no_none_test = no_none(data_test)
-    y_test, X_test = split_xy(data_no_none_test)
+    #data_no_none_test = no_none(data_test)
+    #y_test, X_test = split_xy(data_no_none_test)
     
     
-    feature_transform(y_train, X_train, y_test, X_test)
+    ##feature_transform(y_train, X_train, y_test, X_test)
     # colorplot(clf, ax, x, y, h=100)
 
 
