@@ -52,33 +52,30 @@ def no_none(data):
     '''
     # Inzicht in data
     print(f'OVERZICHT: {data.isnull().sum()}')
-    print(data)
 
     # If the total number of NaN observations in a column are greater than 40%, delete the entire column.
     perc = 40.0
     min_count = int(((100-perc)/100)*data.shape[0] + 1)
     data_dropcolumn = data.dropna(axis=1, thresh=min_count)
-
-    print(data_dropcolumn)
-    print(data_dropcolumn.size)
+    #print(data_dropcolumn)
+    #print(data_dropcolumn.size)
 
     # fill the NaN observations.
     data_fill = data_dropcolumn.fillna(data_dropcolumn.median())
-    print(data_fill.head())
-    print(data_fill.size)
+    #print(data_fill)
+    #print(data_fill.size)
 
     # Inzicht in data
     print(f'OVERZICHT NONONE: {data_fill.isnull().sum()}')
+    return data_fill
 
 def split_xy(data_no_none):
-    y = data_no_none_train.pop('label')
-    X = data_no_none_train
+    '''
+    Split in X (data) and y (label)
+    '''
+    y = data_no_none.pop('label')
+    X = data_no_none
     return y, X
-
-def missing_data(data):
-    '''
-    Filling missing data
-    '''
 
 def feature_scale(data_train):
     '''
@@ -88,29 +85,26 @@ def feature_scale(data_train):
     scaler = StandardScaler()
     scaler.fit(data_train)
     X_scaled = scaler.transform(data_train)
-
     print(X_scaled)
-
+    
+    # minmax scaler
     scaler_two = MinMaxScaler()
     scaler_two.fit(data_train)
     X_scaled_two = scaler_two.transform(data_train)
-
     print(X_scaled_two)
-
+    
+    # robustscaler
     scaler_three = RobustScaler()
     scaler_three.fit(data_train)
     X_scaled_three = scaler_three.transform(data_train)
-
     print(X_scaled_three)
-    return X_scaled_three
+    return X_scaled_two
 
 
-def feature_transform(X_train, X_test, y_train, y_test):
+def feature_transform(X_train, X_test):
     '''
     Transformation of features (PCA)
     '''
-    # Waardes aanpassenn naar gescalde variant.    
-    
     # Perform a PCA
     pca = decomposition.PCA(n_components=2)
     pca.fit(X_train) 
@@ -126,59 +120,15 @@ def feature_transform(X_train, X_test, y_train, y_test):
     # Print result
     print(f"Training result: {score_train}")
     print(f"Test result: {score_test}")
-
-# Uit voorbeeld, Not niet gereed:
-def colorplot(clf, ax, x, y, h=100):
-    '''
-    Overlay the decision areas as colors in an axes.
     
-    Input:
-        clf: trained classifier
-        ax: axis to overlay color mesh on
-        x: feature on x-axis
-        y: feature on y-axis
-        h(optional): steps in the mesh
-    '''
-    # Create a meshgrid the size of the axis
-    xstep = (x.max() - x.min() ) / 20.0
-    ystep = (y.max() - y.min() ) / 20.0
-    x_min, x_max = x.min() - xstep, x.max() + xstep
-    y_min, y_max = y.min() - ystep, y.max() + ystep
-    h = max((x_max - x_min, y_max - y_min))/h
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                         np.arange(y_min, y_max, h))
-    
-    # Plot the decision boundary. For that, we will assign a color to each
-    # point in the mesh [x_min, x_max]x[y_min, y_max].
-    if hasattr(clf, "decision_function"):
-        Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
-    else:
-        Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])
-    if len(Z.shape) > 1:
-        Z = Z[:, 1]
-    
-    # Put the result into a color plot
-    cm = plt.cm.RdBu_r
-    Z = Z.reshape(xx.shape)
-    ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
-    del xx, yy, x_min, x_max, y_min, y_max, Z, cm
-
 
 if __name__ == "__main__":
     data_brats = load_data() 
     data_train, data_test = split_data(data_brats)
-
-    #TRAIN
     data_no_none_train = no_none(data_train)
-    ##y_train, X_train = split_xy(data_no_none_train)
-    
-    #TEST
-    #data_no_none_test = no_none(data_test)
-    #y_test, X_test = split_xy(data_no_none_test)
-    
-    
-    ##feature_transform(y_train, X_train, y_test, X_test)
-    # colorplot(clf, ax, x, y, h=100)
+    y_train, X_train = split_xy(data_no_none_train)
+    #X_scale = feature_scale(X_train)
+    #feature_transform(y_train, X_scale)
 
 
     
