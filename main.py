@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import datasets as ds
+from sklearn import decomposition
 import seaborn
 
 # Import code
@@ -22,8 +23,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 # Classifiers
-from sklearn import metrics
 from sklearn.decomposition import PCA
+from sklearn import model_selection
+from sklearn import metrics
+from sklearn import feature_selection 
+from sklearn import preprocessing
+from sklearn import neighbors
+from sklearn import svm
+
 
 def split_data(data_brats):
 
@@ -35,19 +42,28 @@ def split_data(data_brats):
 
     data_features = pd.DataFrame(data=data_brats)
     data_train, data_test = train_test_split(data_features, test_size=0.45) # Nog bepalen wat test_size wordt
+    #print(f'data_train: {data_train}')
+    #print(f'data_test: {data_test}')
     return data_train, data_test
 
-def no_none(data_scaled):
+def no_none(data):
     '''
     Drop rows and colums with to many None. Threshold for minimum amount of non-None values in a row and a column is set on ... and ... respectively. 
     '''
-    data_no_none = data_scaled.dropna(axis=1, thresh=150) #, thresh=None, subset=None, inplace=False)
+    data_no_none = data.dropna() #axis=1, thresh=91) #, thresh=None, subset=None, inplace=False)
     print(data_no_none.head())
     print(data_no_none.size)
     return data_no_none
 
-def missing_data(data):
+def split_xy(data_no_none):
+    y = data_no_none_train.pop('label')
+    X = data_no_none_train
+    return y, X
 
+def missing_data(data):
+    '''
+    Filling missing data
+    '''
 
 def feature_scale(data_train):
     '''
@@ -71,29 +87,30 @@ def feature_scale(data_train):
     X_scaled_three = scaler_three.transform(data_train)
 
     print(X_scaled_three)
+    return X_scaled_three
 
 
-    return data_scaled
-
-
-
-
-
-
-
-def feature_selection():
-    '''
-    Selection of features
-    '''
-
-    # cross validation?
-
-
-def feature_transform():
+def feature_transform(X_train, X_test, y_train, y_test):
     '''
     Transformation of features (PCA)
     '''
+    # Waardes aanpassenn naar gescalde variant.    
+    
+    # Perform a PCA
+    pca = decomposition.PCA(n_components=2)
+    pca.fit(X_train) 
+    X_train_pca = pca.transform(X_train)
+    X_test_pca = pca.transform(X_test)
 
+    # Fit kNN
+    knn = neighbors.KNeighborsClassifier(n_neighbors=15)
+    knn.fit(X_train_pca, y_train)
+    score_train = knn.score(X_train_pca, y_train)
+    score_test = knn.score(X_test_pca, y_test)
+
+    # Print result
+    print(f"Training result: {score_train}")
+    print(f"Test result: {score_test}")
 
 # Uit voorbeeld, Not niet gereed:
 def colorplot(clf, ax, x, y, h=100):
@@ -135,11 +152,17 @@ def colorplot(clf, ax, x, y, h=100):
 if __name__ == "__main__":
     data_brats = load_data() 
     data_train, data_test = split_data(data_brats)
-    feature_scale(data_train)
-    # feature_scale(data_train)
-    # data_nonone = no_none(data_brats)
-    # feature_selection()
-    # feature_transform()
+
+    #TRAIN
+    data_no_none_train = no_none(data_train)
+    y_train, X_train = split_xy(data_no_none_train)
+    
+    #TEST
+    data_no_none_test = no_none(data_test)
+    y_test, X_test = split_xy(data_no_none_test)
+    
+    
+    feature_transform(y_train, X_train, y_test, X_test)
     # colorplot(clf, ax, x, y, h=100)
 
 
