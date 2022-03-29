@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import datasets as ds
+from sklearn import decomposition
 import seaborn
 
 # Import code
@@ -22,8 +23,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 # Classifiers
-from sklearn import metrics
 from sklearn.decomposition import PCA
+from sklearn import model_selection
+from sklearn import metrics
+from sklearn import feature_selection 
+from sklearn import preprocessing
+from sklearn import neighbors
+from sklearn import svm
+
 
 def split_data(data_brats):
 
@@ -35,19 +42,40 @@ def split_data(data_brats):
 
     data_features = pd.DataFrame(data=data_brats)
     data_train, data_test = train_test_split(data_features, test_size=0.45) # Nog bepalen wat test_size wordt
+    #print(f'data_train: {data_train}')
+    #print(f'data_test: {data_test}')
     return data_train, data_test
 
-def no_none(data_scaled):
+def no_none(data):
     '''
-    Drop rows and colums with to many None. Threshold for minimum amount of non-None values in a row and a column is set on ... and ... respectively. 
+    Deleting columns with NaN or filling them.
     '''
-    data_no_none = data_scaled.dropna(axis=1, thresh=150) #, thresh=None, subset=None, inplace=False)
-    print(data_no_none.head())
-    print(data_no_none.size)
-    return data_no_none
+    # Inzicht in data
+    print(f'OVERZICHT: {data.isnull().sum()}')
 
-def missing_data(data):
+    # If the total number of NaN observations in a column are greater than 40%, delete the entire column.
+    perc = 40.0
+    min_count = int(((100-perc)/100)*data.shape[0] + 1)
+    data_dropcolumn = data.dropna(axis=1, thresh=min_count)
+    #print(data_dropcolumn)
+    #print(data_dropcolumn.size)
 
+    # fill the NaN observations.
+    data_fill = data_dropcolumn.fillna(data_dropcolumn.median())
+    #print(data_fill)
+    #print(data_fill.size)
+
+    # Inzicht in data
+    print(f'OVERZICHT NONONE: {data_fill.isnull().sum()}')
+    return data_fill
+
+def split_xy(data_no_none):
+    '''
+    Split in X (data) and y (label)
+    '''
+    y = data_no_none.pop('label')
+    X = data_no_none
+    return y, X
 
 def feature_scale(data_train):
     '''
@@ -57,90 +85,50 @@ def feature_scale(data_train):
     scaler = StandardScaler()
     scaler.fit(data_train)
     X_scaled = scaler.transform(data_train)
-
     print(X_scaled)
-
+    
+    # minmax scaler
     scaler_two = MinMaxScaler()
     scaler_two.fit(data_train)
     X_scaled_two = scaler_two.transform(data_train)
-
     print(X_scaled_two)
-
+    
+    # robustscaler
     scaler_three = RobustScaler()
     scaler_three.fit(data_train)
     X_scaled_three = scaler_three.transform(data_train)
-
     print(X_scaled_three)
+    return X_scaled_two
 
 
-    return data_scaled
-
-
-
-
-
-
-
-def feature_selection():
-    '''
-    Selection of features
-    '''
-
-    # cross validation?
-
-
-def feature_transform():
+def feature_transform(X_train, X_test):
     '''
     Transformation of features (PCA)
     '''
+    # Perform a PCA
+    pca = decomposition.PCA(n_components=2)
+    pca.fit(X_train) 
+    X_train_pca = pca.transform(X_train)
+    X_test_pca = pca.transform(X_test)
 
+    # Fit kNN
+    knn = neighbors.KNeighborsClassifier(n_neighbors=15)
+    knn.fit(X_train_pca, y_train)
+    score_train = knn.score(X_train_pca, y_train)
+    score_test = knn.score(X_test_pca, y_test)
 
-# Uit voorbeeld, Not niet gereed:
-def colorplot(clf, ax, x, y, h=100):
-    '''
-    Overlay the decision areas as colors in an axes.
+    # Print result
+    print(f"Training result: {score_train}")
+    print(f"Test result: {score_test}")
     
-    Input:
-        clf: trained classifier
-        ax: axis to overlay color mesh on
-        x: feature on x-axis
-        y: feature on y-axis
-        h(optional): steps in the mesh
-    '''
-    # Create a meshgrid the size of the axis
-    xstep = (x.max() - x.min() ) / 20.0
-    ystep = (y.max() - y.min() ) / 20.0
-    x_min, x_max = x.min() - xstep, x.max() + xstep
-    y_min, y_max = y.min() - ystep, y.max() + ystep
-    h = max((x_max - x_min, y_max - y_min))/h
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                         np.arange(y_min, y_max, h))
-    
-    # Plot the decision boundary. For that, we will assign a color to each
-    # point in the mesh [x_min, x_max]x[y_min, y_max].
-    if hasattr(clf, "decision_function"):
-        Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
-    else:
-        Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])
-    if len(Z.shape) > 1:
-        Z = Z[:, 1]
-    
-    # Put the result into a color plot
-    cm = plt.cm.RdBu_r
-    Z = Z.reshape(xx.shape)
-    ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
-    del xx, yy, x_min, x_max, y_min, y_max, Z, cm
-
 
 if __name__ == "__main__":
     data_brats = load_data() 
     data_train, data_test = split_data(data_brats)
-    feature_scale(data_train)
-    # feature_scale(data_train)
-    # data_nonone = no_none(data_brats)
-    # feature_selection()
-    # feature_transform()
-    # colorplot(clf, ax, x, y, h=100)
+    data_no_none_train = no_none(data_train)
+    y_train, X_train = split_xy(data_no_none_train)
+    #X_scale = feature_scale(X_train)
+    #feature_transform(y_train, X_scale)
 
 
     
